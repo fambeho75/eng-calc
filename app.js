@@ -665,13 +665,12 @@
         <nav class="side" aria-label="Calculators"><ul>${CALCS.map((c) => `<li><a href="#${c.id}">${esc(c.title)}</a></li>`).join("")}</ul></nav>
         <main>
           <div class="mobile-nav"><select id="mnav" aria-label="Calculator">${CALCS.map((c) => `<option value="${c.id}">${esc(c.title)}</option>`).join("")}</select></div>
-          <div class="card"><div class="head-row"><div><h2 id="calc-title"></h2><p class="muted" id="calc-desc"></p></div><button class="btn" id="reset">Reset to sheet values</button></div></div>
+          <div class="card"><div class="head-row"><div><h2 id="calc-title"></h2><p class="muted" id="calc-desc"></p></div></div></div>
           <div id="panel" style="display:grid;gap:14px"></div>
         </main>
       </div>
       <footer>Based on the spreadsheet “Engineering calculations.xlsx”. Defaults are the sheet's inputs; all 200 formula cells are reproduced (see tests/verify.js).</footer>`;
     document.getElementById("mnav").onchange = (e) => { location.hash = e.target.value; };
-    document.getElementById("reset").onclick = () => show(true);
   }
   function show(force) {
     const id = currentId(), c = CALCS.find((x) => x.id === id);
