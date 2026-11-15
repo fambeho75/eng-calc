@@ -1,8 +1,6 @@
 # Engineering Calculations
 
-A static web app (plain HTML/CSS/JS, no build step) with the calculators from Jürgen's spreadsheet
-**“Engineering calculations.xlsx”**. Default inputs are the spreadsheet's values. Every one of the 200 formula cells in the workbook
-is reproduced and checked against the cached spreadsheet results (`tests/verify.js`).
+A static web app (plain HTML/CSS/JS, no build step) with engineering calculators for durability, fatigue and materials.
 
 Open `index.html` through any static web server, e.g. GitHub Pages. Works on desktop and phone, has dark/light mode, and can be added to the home screen.
 

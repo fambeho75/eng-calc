@@ -21,8 +21,12 @@
   function field(id, label, unit, value, extra) {
     return `<div class="field"><label for="${id}">${label}</label><div class="inp"><input id="${id}" type="number" inputmode="decimal" step="any" value="${value}" ${extra || ""}>${unit ? `<span class="unit">${unit}</span>` : ""}</div></div>`;
   }
+  function splitLabel(label) {
+    const m = label.match(/^(.*?\S)\s+((?:[α-ωΑ-ΩΔ]|[A-Za-z](?=<sub>|<sup>|\s|$)).*)$/);
+    return m ? `<span class="nm">${m[1]}</span><span class="sym">${m[2]}</span>` : `<span class="nm">${label}</span>`;
+  }
   function res(label, valueHtml, unit, main) {
-    return `<div class="res${main ? " main" : ""}"><span>${label}</span><b>${valueHtml}${unit ? ` <small>${unit}</small>` : ""}</b></div>`;
+    return `<div class="res${main ? " main" : ""}"><span class="lab">${splitLabel(label)}</span><b>${valueHtml}${unit ? ` <small>${unit}</small>` : ""}</b></div>`;
   }
   const math = (inner, label) => `<div>${label ? `<div class="lbl">${label}</div>` : ""}<math display="block">${inner}</math></div>`;
   const note = (html, warn) => `<div class="note${warn ? " warn" : ""}">${html}</div>`;
@@ -84,7 +88,7 @@
           ${math(row(sup(sub(mi("ε"), mi("ln")), mi("pl")), mo("="), mi("ln"), par(mn("1"), mo("+"), eps("eng")), mo("−"), frac(sig("true"), mi("E"))))}
         </div>
         <div id="et-warn"></div>
-        <p class="src">Source: Simuleon, “Converting engineering stress-strain to true stress-strain in Abaqus”.</p>
+        <p class="src">Source: <a href="https://blog.technia.com/en/simulation/converting-engineering-stress-strain-to-true-stress-strain" target="_blank" rel="noopener">TECHNIA (formerly Simuleon): Converting engineering stress-strain to true stress-strain in Abaqus</a></p>
       </div>
       <div class="card">
         <h3>Whole curve</h3>
@@ -101,7 +105,7 @@
       const update = () => {
         const s = num(root, "et-s"), e = num(root, "et-e"), E = num(root, "et-E");
         const r = EC.engToTrue(s, e, E);
-        out(root, "et-out", res("True stress σ<sub>true</sub>", fmt(r.sTrue, 6), "MPa", true) + res("Total true strain ε<sub>true</sub>", fmt(r.eTrue, 6)) + res("Log plastic strain ε<sub>pl</sub> (Abaqus)", fmt(r.ePl, 6)));
+        out(root, "et-out", res("True stress σ<sub>true</sub>", fmt(r.sTrue, 6), "MPa", true) + res("Total true strain ε<sub>true</sub>", fmt(r.eTrue, 6)) + res("Log plastic strain ε<sub>pl</sub>", fmt(r.ePl, 6)));
         out(root, "et-warn", r.ePl < 0 ? note("Plastic strain is negative: this point is in the elastic range.") : "");
         const { rows, errors } = parseTable(root.querySelector("#et-curve").value, 2);
         out(root, "et-err", errors.length ? `<div class="err">${esc(errors.join(" · "))}</div>` : "");
@@ -683,7 +687,7 @@
           <div id="panel" style="display:grid;gap:14px"></div>
         </main>
       </div>
-      <footer>Based on the spreadsheet “Engineering calculations.xlsx”. Defaults are the sheet's inputs; all 200 formula cells are reproduced (see tests/verify.js).</footer>`;
+`;
     document.getElementById("mnav").onchange = (e) => { location.hash = e.target.value; };
   }
   function show(force) {
