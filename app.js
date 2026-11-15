@@ -91,11 +91,11 @@
         <p class="src">Source: <a href="https://blog.technia.com/en/simulation/converting-engineering-stress-strain-to-true-stress-strain" target="_blank" rel="noopener">TECHNIA (formerly Simuleon): Converting engineering stress-strain to true stress-strain in Abaqus</a></p>
       </div>
       <div class="card">
-        <h3>Whole curve</h3>
+        <h3>Complete tensile test</h3>
         <p class="faint">Paste engineering stress [MPa] and engineering strain [–], one point per line (comma, semicolon, tab or space separated). The *PLASTIC table starts at the yield strength with ε<sub>pl</sub> = 0, followed by every point above yield up to the maximum engineering stress. Example data below is illustrative.</p>
         <div class="fields">${field("et-sy", "Yield strength σ<sub>y</sub> (R<sub>p0.2</sub>, engineering)", "MPa", 250)}</div>
         <textarea id="et-curve" spellcheck="false">${ex.map((p) => p.join(", ")).join("\n")}</textarea>
-        <div class="actions"><button class="btn" id="et-csv">Download *PLASTIC CSV</button><label class="btn">Load CSV file<input id="et-file" type="file" accept=".csv,.txt" hidden></label></div>
+        <div class="actions"><button class="btn" id="et-csv">Download *PLASTIC (.inp)</button><label class="btn">Load CSV file<input id="et-file" type="file" accept=".csv,.txt" hidden></label></div>
         <div id="et-err"></div>
         <div id="et-chart"></div>
         <div class="tbl-wrap" id="et-tbl"></div>
@@ -127,13 +127,13 @@
           { name: "Engineering", pts: pts.map((p) => [p.e, p.s]) },
           { name: "True (σ_true vs ε_true)", pts: pts.map((p) => [p.eTrue, p.sTrue]) }] }));
         out(root, "et-tbl", `<table class="tbl"><thead><tr><th>σ<sub>eng</sub> [MPa]</th><th>ε<sub>eng</sub></th><th>σ<sub>true</sub> [MPa]</th><th>ε<sub>true</sub></th><th>ε<sub>pl,ln</sub></th></tr></thead><tbody>${
-          pts.map((p) => `<tr><td>${fmt(p.s, 6)}</td><td>${fmt(p.e, 6)}</td><td class="out">${fmt(p.sTrue, 6)}</td><td>${fmt(p.eTrue, 6)}</td><td>${fmt(p.ePl, 6)}</td></tr>`).join("")}</tbody></table>
+          pts.map((p) => `<tr><td>${p.s.toFixed(1)}</td><td>${fmt(p.e, 6)}</td><td class="out">${p.sTrue.toFixed(1)}</td><td>${fmt(p.eTrue, 6)}</td><td>${fmt(p.ePl, 6)}</td></tr>`).join("")}</tbody></table>
           <h3 style="margin-top:16px">*PLASTIC input</h3>
           <table class="tbl"><thead><tr><th>True stress [MPa]</th><th>Plastic strain [–]</th></tr></thead><tbody>${
-          plastic.map((q) => `<tr><td class="out">${fmt(q.sTrue, 6)}</td><td class="out">${fmt(q.ePlA, 6)}</td></tr>`).join("")}</tbody></table>${notes.map((n) => `<p class="faint">${n}</p>`).join("")}`);
+          plastic.map((q) => `<tr><td class="out">${q.sTrue.toFixed(1)}</td><td class="out">${q.ePlA.toFixed(6)}</td></tr>`).join("")}</tbody></table>${notes.map((n) => `<p class="faint">${n}</p>`).join("")}`);
       };
       root.addEventListener("input", update);
-      root.querySelector("#et-csv").onclick = () => downloadCsv("plastic.csv", "true_stress_MPa,plastic_strain\n" + plastic.map((p) => `${+p.sTrue.toPrecision(8)},${+p.ePlA.toPrecision(8)}`).join("\n") + "\n");
+      root.querySelector("#et-csv").onclick = () => downloadCsv("plastic.inp", "** *PLASTIC from engineering stress-strain (Engineering Calculations)\n** E = " + num(root, "et-E") + " MPa, yield strength = " + num(root, "et-sy") + " MPa (engineering)\n** true stress [MPa], log plastic strain [-]\n*PLASTIC\n" + plastic.map((p) => `${p.sTrue.toFixed(1)}, ${p.ePlA.toFixed(6)}`).join("\n") + "\n");
       root.querySelector("#et-file").onchange = (e) => fileToTextarea(e.target, root.querySelector("#et-curve"), update);
       update();
     }
