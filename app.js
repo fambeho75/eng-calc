@@ -88,13 +88,14 @@
       </div>
       <div class="card">
         <h3>Whole curve</h3>
-        <p class="faint">Paste engineering stress [MPa] and engineering strain [–], one point per line (comma, semicolon, tab or space separated). The table gives the Abaqus *PLASTIC input (true stress, log plastic strain) from the first yielding point on. Example data below is illustrative.</p>
+        <p class="faint">Paste engineering stress [MPa] and engineering strain [–], one point per line (comma, semicolon, tab or space separated). The *PLASTIC table starts at the yield strength with ε<sub>pl</sub> = 0, followed by every point above yield up to the maximum engineering stress. Example data below is illustrative.</p>
+        <div class="fields">${field("et-sy", "Yield strength σ<sub>y</sub> (R<sub>p0.2</sub>, engineering)", "MPa", 250)}</div>
         <textarea id="et-curve" spellcheck="false">${ex.map((p) => p.join(", ")).join("\n")}</textarea>
         <div class="actions"><button class="btn" id="et-csv">Download *PLASTIC CSV</button><label class="btn">Load CSV file<input id="et-file" type="file" accept=".csv,.txt" hidden></label></div>
         <div id="et-err"></div>
         <div id="et-chart"></div>
         <div class="tbl-wrap" id="et-tbl"></div>
-        ${note("Engineering → true conversion is only valid up to uniform elongation (onset of necking, max engineering stress). Points with negative log plastic strain are still elastic and are left out of the *PLASTIC table; the first row is shifted to ε<sub>pl</sub> = 0.")}
+        ${note("Engineering → true conversion is only valid up to uniform elongation (onset of necking, max engineering stress). The first *PLASTIC row is the true yield stress σ<sub>y</sub>(1 + σ<sub>y</sub>/E) at ε<sub>pl</sub> = 0. Points at or below yield, points after the maximum engineering stress and points whose plastic strain does not increase are left out.")}
       </div>`;
       let plastic = [];
       const update = () => {
@@ -105,14 +106,27 @@
         const { rows, errors } = parseTable(root.querySelector("#et-curve").value, 2);
         out(root, "et-err", errors.length ? `<div class="err">${esc(errors.join(" · "))}</div>` : "");
         const pts = rows.map((r) => ({ s: r.nums[r.nums.length - 2], e: r.nums[r.nums.length - 1] })).map((p) => ({ ...p, ...EC.engToTrue(p.s, p.e, E) }));
-        plastic = pts.filter((p) => p.ePl >= 0 && p.s > 0);
-        const first = plastic.length ? plastic[0].ePl : 0;
-        plastic = plastic.map((p, i) => ({ ...p, ePlA: i === 0 ? 0 : p.ePl }));
+        const sy = num(root, "et-sy");
+        plastic = [];
+        let notes = [];
+        if (sy > 0 && E > 0) {
+          plastic.push({ sTrue: sy * (1 + sy / E), ePlA: 0, yieldRow: true });
+          let iMax = pts.reduce((m, p, i) => (p.s > pts[m].s ? i : m), 0);
+          let last = 0;
+          pts.forEach((p, i) => {
+            if (p.s <= sy || i > iMax || !(p.ePl > last)) return;
+            plastic.push({ ...p, ePlA: p.ePl }); last = p.ePl;
+          });
+          if (iMax < pts.length - 1) notes.push("Points after the maximum engineering stress (necking) are not used.");
+        } else notes.push("Enter a yield strength to build the *PLASTIC table.");
         out(root, "et-chart", CH.lineChart({ id: "et", xlabel: "Strain [–]", ylabel: "Stress [MPa]", series: [
           { name: "Engineering", pts: pts.map((p) => [p.e, p.s]) },
           { name: "True (σ_true vs ε_true)", pts: pts.map((p) => [p.eTrue, p.sTrue]) }] }));
-        out(root, "et-tbl", `<table class="tbl"><thead><tr><th>σ<sub>eng</sub> [MPa]</th><th>ε<sub>eng</sub></th><th>σ<sub>true</sub> [MPa]</th><th>ε<sub>true</sub></th><th>ε<sub>pl,ln</sub></th><th>*PLASTIC ε<sub>pl</sub></th></tr></thead><tbody>${
-          pts.map((p) => { const pl = plastic.find((q) => q === p || (q.s === p.s && q.e === p.e)); return `<tr><td>${fmt(p.s, 6)}</td><td>${fmt(p.e, 6)}</td><td class="out">${fmt(p.sTrue, 6)}</td><td>${fmt(p.eTrue, 6)}</td><td>${fmt(p.ePl, 6)}</td><td class="out">${pl ? fmt(pl.ePlA, 6) : "—"}</td></tr>`; }).join("")}</tbody></table>${first > 0.002 ? `<p class="faint">Note: first plastic point has ε<sub>pl</sub> = ${fmt(first, 4)}; it is set to 0 in *PLASTIC.</p>` : ""}`);
+        out(root, "et-tbl", `<table class="tbl"><thead><tr><th>σ<sub>eng</sub> [MPa]</th><th>ε<sub>eng</sub></th><th>σ<sub>true</sub> [MPa]</th><th>ε<sub>true</sub></th><th>ε<sub>pl,ln</sub></th></tr></thead><tbody>${
+          pts.map((p) => `<tr><td>${fmt(p.s, 6)}</td><td>${fmt(p.e, 6)}</td><td class="out">${fmt(p.sTrue, 6)}</td><td>${fmt(p.eTrue, 6)}</td><td>${fmt(p.ePl, 6)}</td></tr>`).join("")}</tbody></table>
+          <h3 style="margin-top:16px">*PLASTIC input</h3>
+          <table class="tbl"><thead><tr><th>True stress [MPa]</th><th>Plastic strain [–]</th></tr></thead><tbody>${
+          plastic.map((q) => `<tr><td class="out">${fmt(q.sTrue, 6)}</td><td class="out">${fmt(q.ePlA, 6)}</td></tr>`).join("")}</tbody></table>${notes.map((n) => `<p class="faint">${n}</p>`).join("")}`);
       };
       root.addEventListener("input", update);
       root.querySelector("#et-csv").onclick = () => downloadCsv("plastic.csv", "true_stress_MPa,plastic_strain\n" + plastic.map((p) => `${+p.sTrue.toPrecision(8)},${+p.ePlA.toPrecision(8)}`).join("\n") + "\n");
