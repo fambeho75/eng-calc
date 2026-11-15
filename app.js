@@ -133,7 +133,7 @@
           plastic.map((q) => `<tr><td class="out">${q.sTrue.toFixed(1)}</td><td class="out">${q.ePlA.toFixed(6)}</td></tr>`).join("")}</tbody></table>${notes.map((n) => `<p class="faint">${n}</p>`).join("")}`);
       };
       root.addEventListener("input", update);
-      root.querySelector("#et-csv").onclick = () => downloadCsv("plastic.inp", "** *PLASTIC from engineering stress-strain (Engineering Calculations)\n** E = " + num(root, "et-E") + " MPa, yield strength = " + num(root, "et-sy") + " MPa (engineering)\n** true stress [MPa], log plastic strain [-]\n*PLASTIC\n" + plastic.map((p) => `${p.sTrue.toFixed(1)}, ${p.ePlA.toFixed(6)}`).join("\n") + "\n");
+      root.querySelector("#et-csv").onclick = () => downloadCsv("plastic.inp", "*PLASTIC\n" + plastic.map((p) => `${p.sTrue.toFixed(1)}, ${p.ePlA.toFixed(6)}`).join("\n") + "\n");
       root.querySelector("#et-file").onchange = (e) => fileToTextarea(e.target, root.querySelector("#et-curve"), update);
       update();
     }
